@@ -1,0 +1,46 @@
+x-deploy: &x-deploy
+  mode: global
+  labels:
+    # Prometheus
+    io.prometheus.enabled: "true"
+    io.prometheus.port: ${PROMTAIL_PORT:-9080}
+  resources:
+    limits:
+      memory: 256M
+    reservations:
+      memory: 64M
+
+x-logging: &x-logging
+  options:
+    max-size: "12m"
+    max-file: "5"
+  driver: json-file
+
+networks:
+  dockerswarm_monitoring:
+    name: dockerswarm_monitoring
+    external: true
+
+configs:
+  promtail.yml:
+    template_driver: golang
+    file: configs/promtail.yml
+
+services:
+  promtail:
+    image:  localhost/swarmtail:latest
+    command:
+      - -log.level=info
+      - -config.file=/etc/promtail/promtail.yml
+    networks:
+      - dockerswarm_monitoring
+    ports:
+      - ${PROMTAIL_PORT:-9080}:9080
+    volumes:
+      - /var/log:/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    configs:
+      - source: promtail.yml
+        target: /etc/promtail/promtail.yml
+    deploy: *x-deploy
+    logging: *x-logging
