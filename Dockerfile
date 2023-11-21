@@ -2,7 +2,7 @@
 FROM golang:1.21.3-bullseye as build
 
 # A customized Promtail source code with support for "dockerswarm_sd_configs"
-ADD https://github.com/socheatsok78/loki.git#impl_dockerswarm_sd_configs /src/loki
+ADD https://github.com/socheatsok78/loki.git#rebase_impl_dockerswarm_sd_configs /src/loki
 WORKDIR /src/loki
 
 # Backports repo required to get a libsystemd version 246 or newer which is required to handle journal +ZSTD compression
