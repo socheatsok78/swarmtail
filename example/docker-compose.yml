@@ -1,5 +1,9 @@
 x-deploy: &x-deploy
-  mode: global
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - node.role == manager
   labels:
     # Prometheus
     io.prometheus.enabled: "true"
