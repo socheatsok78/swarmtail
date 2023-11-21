@@ -30,14 +30,16 @@ scrape_configs:
           __path__: /var/log/*log
 
   # See https://grafana.com/docs/loki/latest/send-data/promtail/configuration/#docker_sd_config
-  # Also see https://prometheus.io/docs/prometheus/latest/configuration/configuration/#docker_sd_config
   - job_name: docker
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
         filters:
-          - name: is-task
-            values: ["false"]
+          # If you want to scrape only containers that are not Swarm tasks, uncomment the following line:
+          # - name: is-task
+          #   values: ["false"]
+
+          # Only enable scraping for containers with the label "io.promtail.enabled=true"
           - name: label
             values: ["label=io.promtail.enabled=true"]
     relabel_configs:
@@ -51,7 +53,7 @@ scrape_configs:
         regex: __meta_docker_(container_label_.+)
       - action: labelmap
         regex: __meta_docker_container_label_com_(docker_stack_.+)
-      
+
       - replacement: /var/log/containers/*$1/*.log
         separator: /
         source_labels: [__meta_docker_container_id, container]
