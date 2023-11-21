@@ -1,8 +1,6 @@
 # https://grafana.com/docs/loki/latest/clients/promtail/configuration/
 server:
   http_listen_port: 9080
-  grpc_listen_port: 0
-  log_level: debug
 
 positions:
   filename: /tmp/positions.yaml
