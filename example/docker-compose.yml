@@ -30,8 +30,8 @@ services:
   promtail:
     image:  localhost/swarmtail:latest
     command:
-      - -log.level=info
-      - -config.file=/etc/promtail/promtail.yml
+      - "-log.level=info"
+      - "-config.file=/etc/promtail/promtail.yml"
     networks:
       - dockerswarm_monitoring
     ports:
