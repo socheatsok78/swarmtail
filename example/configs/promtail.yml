@@ -34,8 +34,8 @@ scrape_configs:
         refresh_interval: 5s
         filters:
           # If you want to scrape only containers that are not Swarm tasks, uncomment the following line:
-          # - name: is-task
-          #   values: ["false"]
+          - name: is-task
+            values: ["false"]
 
           # Only enable scraping for containers with the label "io.promtail.enabled=true"
           - name: label
