@@ -46,18 +46,12 @@ scrape_configs:
         replacement: /var/lib/docker/containers/$1/*-json.log
         target_label: __path__
 
-      - source_labels:
-        - __meta_dockerswarm_task_container_id
-        target_label: container_id
-
       - source_labels: [__meta_dockerswarm_task_state]
         regex: running
         action: keep
 
       - action: labeldrop
         regex: '__meta_dockerswarm_container_label_.+(mounts).+'
-      - action: labelmap
-        regex: __meta_dockerswarm_(service_label_.+)
       - action: labelmap
         regex: __meta_dockerswarm_service_label_com_(docker_stack_.+)
 
