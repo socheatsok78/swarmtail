@@ -1,0 +1,93 @@
+# https://grafana.com/docs/loki/latest/clients/promtail/configuration/
+server:
+  http_listen_port: 9080
+
+positions:
+  filename: /promtail/positions.yaml
+
+clients:
+  - # The tenant ID used by default to push logs to Loki. If omitted or empty
+    # it assumes Loki is running in single-tenant mode and no X-Scope-OrgID header
+    # is sent.
+    url: http://loki:3100/loki/api/v1/push
+    # tenant_id: demo
+
+    # Attach these labels to any time series or alerts when communicating with
+    # external systems (federation, remote storage, Alertmanager).
+    external_labels:
+      cluster: demo
+      __replica__: replica-{{.Task.Slot}}
+
+scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*log
+
+  # See https://grafana.com/docs/loki/latest/send-data/promtail/configuration/#docker_sd_config
+  # Also see https://prometheus.io/docs/prometheus/latest/configuration/configuration/#dockerswarm_sd_config
+  - job_name: dockerswarm
+    dockerswarm_sd_configs:
+      - host: http://dockerswarm_sd_server:9093
+        refresh_interval: 5s
+        role: tasks
+    pipeline_stages:
+      - docker: {}
+    relabel_configs:
+      - source_labels:
+        - __meta_dockerswarm_node_hostname
+        target_label: __host__
+
+      - source_labels:
+        - __meta_dockerswarm_task_container_id
+        replacement: /var/lib/docker/containers/$1/*-json.log
+        target_label: __path__
+
+      - source_labels:
+        - __meta_dockerswarm_task_container_id
+        target_label: container_id
+
+      - source_labels: [__meta_dockerswarm_task_state]
+        regex: running
+        action: keep
+
+      - action: labeldrop
+        regex: '__meta_dockerswarm_container_label_.+(mounts).+'
+      - action: labelmap
+        regex: __meta_dockerswarm_(service_label_.+)
+      - action: labelmap
+        regex: __meta_dockerswarm_service_label_com_(docker_stack_.+)
+
+      # !!! IMPORTANT !!!
+      # Kubernetes compatible relabeling.
+      # Reuse the "com.docker.stack.namespace" label for the "namespace" name.
+      - action: replace
+        source_labels:
+        - __meta_dockerswarm_service_label_com_docker_stack_namespace
+        target_label: namespace
+      # Reuse the "com.docker.stack.namespace" label for the "deployment" name.
+      - source_labels:
+        - __meta_dockerswarm_service_label_com_docker_stack_namespace
+        action: replace
+        target_label: deployment
+      # Reuse the "com.docker.swarm.service.name" label for the "pod" name.
+      - source_labels:
+        - __meta_dockerswarm_service_name
+        target_label: pod
+      # Reuse the "__meta_dockerswarm_service_name", "__meta_dockerswarm_task_slot" & "__meta_dockerswarm_task_id" label for the "container" name.
+      - action: replace
+        source_labels:
+        - __meta_dockerswarm_service_name
+        - __meta_dockerswarm_task_slot
+        - __meta_dockerswarm_task_id
+        separator: '.'
+        target_label: container
+      # Reuse the "com.docker.stack.namespace" and "container" labels for the "job" name.
+      - action: replace
+        replacement: $1
+        separator: /
+        source_labels: [__meta_dockerswarm_service_label_com_docker_stack_namespace, container]
+        target_label: job
