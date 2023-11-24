@@ -50,10 +50,10 @@ services:
     ports:
       - ${PROMTAIL_PORT:-9080}:9080
     volumes:
+      - promtail:/promtail
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/log:/var/log:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - promtail:/promtail
     configs:
       - source: promtail.yml
         target: /etc/promtail/promtail.yml
